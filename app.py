@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import io
 
-from keywordgen import generate_business_name_suggestions
+from keywordgen import generate_business_name_suggestions, combine_and_deduplicate
 from abnlookup import query_postcodes
 
 def reset_session_state():
@@ -52,7 +52,6 @@ if page == "Home":
     st.session_state.postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
 
     if sidebar.button("Generate Suggestions"):
-        reset_session_state()
         additional_names = ["Bugz Off", "Sydney Side Pest", "Pest Control", "Pesticides"]
         with st.spinner('Generating Business Names...'):
             initial_suggestions, refined_names, combined_suggestions = generate_business_name_suggestions(st.session_state.industry_input, additional_names)
@@ -73,7 +72,10 @@ if page == "Home":
         )
         if st.session_state.allow_edit_initial:
             edited_initial_suggestions = st.text_area("Edit Initial Suggested Names:", ', '.join(st.session_state.initial_suggestions))
+            # Update the initial_suggestions state
             st.session_state.initial_suggestions = edited_initial_suggestions.split(', ')
+            # Update combined_suggestions based on edited initial_suggestions
+            st.session_state.combined_suggestions = combine_and_deduplicate(st.session_state.initial_suggestions, st.session_state.refined_names)
         else:
             st.write(f"Initial Suggestions: {', '.join(st.session_state.initial_suggestions)}")
 
@@ -87,9 +89,13 @@ if page == "Home":
         )
         if st.session_state.allow_edit_refined:
             edited_refined_names = st.text_area("Edit Refined Names:", ', '.join(st.session_state.refined_names))
+            # Update the refined_names state
             st.session_state.refined_names = edited_refined_names.split(', ')
+            # Update combined_suggestions based on edited refined_names
+            st.session_state.combined_suggestions = combine_and_deduplicate(st.session_state.initial_suggestions, st.session_state.refined_names)
         else:
             st.write(f"Refined Names: {', '.join(st.session_state.refined_names)}")
+
 
     if st.session_state.combined_suggestions:
         st.subheader(f"Combined Suggestions for {st.session_state.industry_input} Industry:")
@@ -105,11 +111,14 @@ if page == "Home":
         else:
             st.write(f"Combined Suggestions: {', '.join(st.session_state.combined_suggestions)}")
 
-
+    if st.session_state.initial_suggestions:
         if st.button("Explore Businesses Now"):
+            st.session_state.result_df = None
             with st.spinner('Fetching Business Information...'):
                 postcodes_to_query = {st.session_state.postcode_input}
                 st.session_state.result_df = query_postcodes(postcodes_to_query, st.session_state.combined_suggestions)
+    else:
+        st.warning("Please generate suggestions first before exploring businesses.")
 
     if st.session_state.result_df is not None and not st.session_state.result_df.empty:
         st.subheader(f"Businesses in {st.session_state.postcode_input} related to {st.session_state.industry_input}:")
@@ -192,7 +201,7 @@ elif page == "Feedback":
         updated_feedback_df.to_csv('feedback.csv')
         st.success(f"Thank you for your feedback, {name}!")
 
-# Styling: Add some style to the layout using Markdown
+# Styling
 st.markdown(
     """
 <style>
