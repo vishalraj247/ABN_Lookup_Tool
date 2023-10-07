@@ -40,26 +40,27 @@ if page == "Home":
     user_industry_input = st.sidebar.text_input("Enter Industry:", value=st.session_state.industry_input)
     user_postcode_input = st.sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
 
-    if st.sidebar.button("Search"):
+    if st.sidebar.button("Generate Suggestions"):
         if user_industry_input and user_postcode_input:
-            # Reset session state variables but keep current user inputs
             reset_session_state()
             st.session_state.industry_input = user_industry_input
             st.session_state.postcode_input = user_postcode_input
-
-            with st.spinner('Searching...'):
+            
+            with st.spinner('Generating Business Names...'):
                 st.session_state.suggested_names = generate_business_name_suggestions(st.session_state.industry_input)
                 while not st.session_state.suggested_names:
                     st.warning("No suggestions generated. Regenerating...")
                     st.session_state.suggested_names = generate_business_name_suggestions(st.session_state.industry_input)
-                
+
     if st.session_state.suggested_names:
         st.subheader(f"Suggested Names for {st.session_state.industry_input} Industry:")
-        st.write(', '.join(st.session_state.suggested_names))
+        edited_suggested_names = st.text_area("Edit Suggested Names:", ', '.join(st.session_state.suggested_names))
+        st.session_state.suggested_names = edited_suggested_names.split(', ')
 
-        if st.session_state.result_df is None or st.session_state.result_df.empty:
-            postcodes_to_query = {st.session_state.postcode_input}
-            st.session_state.result_df = query_postcodes(postcodes_to_query, st.session_state.suggested_names)
+        if st.button("Explore Businesses Now"):
+            with st.spinner('Fetching Business Information...'):
+                postcodes_to_query = {st.session_state.postcode_input}
+                st.session_state.result_df = query_postcodes(postcodes_to_query, st.session_state.suggested_names)
 
     if st.session_state.result_df is not None and not st.session_state.result_df.empty:
         st.subheader(f"Businesses in {st.session_state.postcode_input} related to {st.session_state.industry_input}:")
