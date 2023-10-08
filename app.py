@@ -30,6 +30,9 @@ if 'industry_input' not in st.session_state:
 if 'postcode_input' not in st.session_state:
     st.session_state.postcode_input = ""
 
+if 'page_number' not in st.session_state:
+    st.session_state.page_number = 1
+
 if 'allow_edit_initial' not in st.session_state:
     st.session_state.allow_edit_initial = False
 
@@ -50,14 +53,14 @@ if page == "Home":
     sidebar.header("User Input Features")
     st.session_state.industry_input = sidebar.text_input("Enter Industry:", value=st.session_state.industry_input)
     st.session_state.postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
+    st.session_state.page_number = sidebar.number_input("Enter Page Limit to Scrape:", value=st.session_state.page_number, min_value=1, max_value=25, step=1)
 
     if sidebar.button("Generate Suggestions"):
-        additional_names = ["Bugz Off", "Sydney Side Pest", "Pest Control", "Pesticides"]
         with st.spinner('Generating Business Names...'):
-            initial_suggestions, refined_names, combined_suggestions = generate_business_name_suggestions(st.session_state.industry_input, additional_names)
+            initial_suggestions, refined_names, combined_suggestions = generate_business_name_suggestions(st.session_state.industry_input, st.session_state.page_number)
             while not initial_suggestions:
                 st.warning("No initial suggestions generated. Regenerating...")
-                initial_suggestions, refined_names, combined_suggestions = generate_business_name_suggestions(st.session_state.industry_input, additional_names)
+                initial_suggestions, refined_names, combined_suggestions = generate_business_name_suggestions(st.session_state.industry_input, st.session_state.page_number)
             st.session_state.initial_suggestions = initial_suggestions
             st.session_state.refined_names = refined_names
             st.session_state.combined_suggestions = combined_suggestions
@@ -66,15 +69,13 @@ if page == "Home":
         st.subheader(f"Initial suggested Names for {st.session_state.industry_input} Industry:")
         st.session_state.allow_edit_initial = st.radio(
             "Edit Initial Suggested Names?",
-            [True, False],
+            ['Yes', 'No'],
             key="edit_initial",
-            index=int(not st.session_state.allow_edit_initial)
+            index=0 if st.session_state.allow_edit_initial == 'Yes' else 1
         )
-        if st.session_state.allow_edit_initial:
+        if st.session_state.allow_edit_initial == 'Yes':
             edited_initial_suggestions = st.text_area("Edit Initial Suggested Names:", ', '.join(st.session_state.initial_suggestions))
-            # Update the initial_suggestions state
             st.session_state.initial_suggestions = edited_initial_suggestions.split(', ')
-            # Update combined_suggestions based on edited initial_suggestions
             st.session_state.combined_suggestions = combine_and_deduplicate(st.session_state.initial_suggestions, st.session_state.refined_names)
         else:
             st.write(f"Initial Suggestions: {', '.join(st.session_state.initial_suggestions)}")
@@ -83,11 +84,11 @@ if page == "Home":
         st.subheader(f"Refined Names for {st.session_state.industry_input} Industry:")
         st.session_state.allow_edit_refined = st.radio(
             "Edit Refined Names?",
-            [True, False],
+            ['Yes', 'No'],
             key="edit_refined",
-            index=int(not st.session_state.allow_edit_refined)
+            index=0 if st.session_state.allow_edit_refined == 'Yes' else 1
         )
-        if st.session_state.allow_edit_refined:
+        if st.session_state.allow_edit_refined == 'Yes':
             edited_refined_names = st.text_area("Edit Refined Names:", ', '.join(st.session_state.refined_names))
             # Update the refined_names state
             st.session_state.refined_names = edited_refined_names.split(', ')
@@ -96,16 +97,15 @@ if page == "Home":
         else:
             st.write(f"Refined Names: {', '.join(st.session_state.refined_names)}")
 
-
     if st.session_state.combined_suggestions:
         st.subheader(f"Combined Suggestions for {st.session_state.industry_input} Industry:")
         st.session_state.allow_edit_combined = st.radio(
             "Edit Combined Suggestions?",
-            [True, False],
+            ['Yes', 'No'],
             key="edit_combined",
-            index=int(not st.session_state.allow_edit_combined)
+            index=0 if st.session_state.allow_edit_combined == 'Yes' else 1
         )
-        if st.session_state.allow_edit_combined:
+        if st.session_state.allow_edit_combined == 'Yes':
             edited_combined_suggestions = st.text_area("Edit Combined Suggestions:", ', '.join(st.session_state.combined_suggestions))
             st.session_state.combined_suggestions = edited_combined_suggestions.split(', ')
         else:
