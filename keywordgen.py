@@ -2,7 +2,9 @@ import openai
 import re
 import os
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_key = os.getenv("OPENAI_API_KEY")
+if openai.api_key is None:
+    raise ValueError("OPENAI_API_KEY environment variable not set")
 
 def generate_business_name_suggestions(industry):
     initial_prompt = f"Please generate a list of unique, one-word keywords that are strictly and directly related to the {industry} industry. These keywords should be commonly associated with businesses in the {industry} sector and should not include generic words or phrases."
