@@ -88,6 +88,8 @@ if page == "Home":
     - Click **'Explore Businesses Now'** to retrieve and display information about businesses related to the selected industry and postcode.
     
     Feel free to navigate through the tool and explore the various features available!
+
+    Current running Status:
     """
     )
 
@@ -110,11 +112,14 @@ if page == "Home":
         st.session_state.explore_businesses = False
         if st.session_state.industry_input:
             with st.spinner('Scraping and Refining Business Names...'):
-                scraped_names = get_all_business_names(st.session_state.industry_input, st.session_state.page_number) # make sure page_number is defined
+                scraped_names = get_all_business_names(st.session_state.industry_input, st.session_state.page_number)
                 st.session_state.scraped_names = scraped_names
                 st.success(f"Scraped {len(scraped_names)} business names for {st.session_state.industry_input}")
                 refined_names = refine_business_names(st.session_state.industry_input, scraped_names)
                 st.session_state.refined_names = refined_names
+                # Check if initial_suggestions is None before concatenation
+                if st.session_state.initial_suggestions is None:
+                    st.session_state.initial_suggestions = []  # Initialize it as an empty list if it's None
                 st.session_state.combined_suggestions = list(set(st.session_state.initial_suggestions + refined_names))
                 st.success(f"Refined and combined suggestions for {st.session_state.industry_input}")
         else:
