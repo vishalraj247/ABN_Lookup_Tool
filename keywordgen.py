@@ -22,7 +22,7 @@ def generate_business_name_suggestions(industry):
     return initial_suggestions
 
 def refine_business_names(industry, additional_names):
-    refine_prompt = f"The following is a list of business names related to the {industry} industry: {', '.join(additional_names)}. Please carefully review the list. For each word, if it isn't a word very strictly related to the {industry} industry, kindly remove it, even if it forms a part of a business name. Leave behind a list of words that are uniquely and very strictly related to the {industry} industry. Also, remove all the function words like, all, the, mr, dr, etc."
+    refine_prompt = f"The following is a list of business names related to the {industry} industry: {', '.join(additional_names)}. Please carefully review the list. For each word, if it isn't a word very strictly related to the {industry} industry, kindly remove it, even if it forms a part of a business name. Leave behind a list of words that are uniquely and very strictly related to the {industry} industry. Also, remove all the function words like, all, the, mr, dr, pty, ltd etc."
 
     refine_response = openai.ChatCompletion.create(
         model="gpt-4-0314",
