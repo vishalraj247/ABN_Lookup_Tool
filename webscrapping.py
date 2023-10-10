@@ -30,11 +30,11 @@ def scrape_yellowpages(session, industry, pageNumber):
     
     return business_names
 
-def get_all_business_names(industry, page_number):
+def get_all_business_names(industry, page_limit):
     all_names = []
-    page_number = 1
+    page_number = 1  # Initializing page_number
     with requests.Session() as session:
-        while page_number <= 5:  # Setting a limit on page numbers to scrape
+        while page_number <= page_limit:  # Setting a limit on page numbers to scrape
             names = scrape_yellowpages(session, industry, page_number)
             if not names:
                 break

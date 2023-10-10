@@ -3,8 +3,9 @@ import pandas as pd
 import os
 import io
 
-from keywordgen import generate_business_name_suggestions, combine_and_deduplicate
+from keywordgen import generate_business_name_suggestions, refine_business_names, combine_and_deduplicate
 from abnlookup import query_postcodes
+from webscrapping import get_all_business_names
 
 def reset_session_state():
     st.session_state.initial_suggestions = None
@@ -42,8 +43,32 @@ if 'allow_edit_refined' not in st.session_state:
 if 'allow_edit_combined' not in st.session_state:
     st.session_state.allow_edit_combined = False
 
+if 'explore_businesses' not in st.session_state:
+    st.session_state.explore_businesses = False
+
 st.set_page_config(page_title="ABN Lookup Tool", page_icon="🔍", layout='wide', initial_sidebar_state="expanded")
 st.title("ABN Lookup Tool")
+
+st.write(
+    """
+    Welcome to the ABN Lookup Tool! Follow these steps to get started:
+    
+    1. **Enter Industry**: Specify the industry you are interested in.
+    2. **Enter Postcode**: Provide the postcode for the location you want to target.
+    3. **Set Page Limit**: Decide the number of pages you want to scrape for business names.
+    
+    After filling in these details:
+    
+    - Click on **Generate Suggestions** to get initial business name suggestions related to the entered industry.
+    - Proceed with **Web Scrape and Refine** to refine the business names after scraping additional data.
+    
+    You can also edit the generated and refined suggestions. Once you are satisfied with the suggestions:
+    
+    - Click **Explore Businesses Now** to retrieve and display information about businesses related to the selected industry and postcode.
+    
+    Feel free to navigate through the tool and explore the various features available!
+    """
+)
 
 sidebar = st.sidebar
 sidebar.title("Navigation")
@@ -56,14 +81,28 @@ if page == "Home":
     st.session_state.page_number = sidebar.number_input("Enter Page Limit to Scrape:", value=st.session_state.page_number, min_value=1, max_value=25, step=1)
 
     if sidebar.button("Generate Suggestions"):
-        with st.spinner('Generating Business Names...'):
-            initial_suggestions, refined_names, combined_suggestions = generate_business_name_suggestions(st.session_state.industry_input, st.session_state.page_number)
+        with st.spinner('Generating Initial Business Name Suggestions...'):
+            initial_suggestions = generate_business_name_suggestions(st.session_state.industry_input)
             while not initial_suggestions:
                 st.warning("No initial suggestions generated. Regenerating...")
-                initial_suggestions, refined_names, combined_suggestions = generate_business_name_suggestions(st.session_state.industry_input, st.session_state.page_number)
+                initial_suggestions = generate_business_name_suggestions(st.session_state.industry_input)
             st.session_state.initial_suggestions = initial_suggestions
-            st.session_state.refined_names = refined_names
-            st.session_state.combined_suggestions = combined_suggestions
+            st.success(f"Generated initial suggestions for {st.session_state.industry_input}")
+
+    # Button to Perform Web Scraping and Refine Suggestions
+    if sidebar.button("Web Scrape and Refine"):
+        st.session_state.explore_businesses = False
+        if st.session_state.industry_input:
+            with st.spinner('Scraping and Refining Business Names...'):
+                scraped_names = get_all_business_names(st.session_state.industry_input, st.session_state.page_number) # make sure page_number is defined
+                st.session_state.scraped_names = scraped_names
+                st.success(f"Scraped {len(scraped_names)} business names for {st.session_state.industry_input}")
+                refined_names = refine_business_names(st.session_state.industry_input, scraped_names)
+                st.session_state.refined_names = refined_names
+                st.session_state.combined_suggestions = list(set(st.session_state.initial_suggestions + refined_names))
+                st.success(f"Refined and combined suggestions for {st.session_state.industry_input}")
+        else:
+            st.warning("Please provide the industry before scraping and refining")
 
     if st.session_state.initial_suggestions:
         st.subheader(f"Initial suggested Names for {st.session_state.industry_input} Industry:")
@@ -111,36 +150,58 @@ if page == "Home":
         else:
             st.write(f"Combined Suggestions: {', '.join(st.session_state.combined_suggestions)}")
 
-    if st.session_state.initial_suggestions:
-        if st.button("Explore Businesses Now"):
-            st.session_state.result_df = None
-            with st.spinner('Fetching Business Information...'):
-                postcodes_to_query = {st.session_state.postcode_input}
-                st.session_state.result_df = query_postcodes(postcodes_to_query, st.session_state.combined_suggestions)
-    else:
-        st.warning("Please generate suggestions first before exploring businesses.")
-
-    if st.session_state.result_df is not None and not st.session_state.result_df.empty:
-        st.subheader(f"Businesses in {st.session_state.postcode_input} related to {st.session_state.industry_input}:")
-
-        # Search bar for ABN or Business Name
-        search_term = st.text_input("Search ABN or Business Name:")
-        if search_term:
-            # Filter the DataFrame based on the search term
-            mask = (st.session_state.result_df['ABN'].astype(str).str.contains(search_term)) | \
-                (st.session_state.result_df['Organisation Name'].str.contains(search_term, case=False))
-            display_df = st.session_state.result_df[mask]
+    if st.button("Explore Businesses Now"):
+        if st.session_state.postcode_input:  # Check if a postcode is entered
+            if st.session_state.combined_suggestions is not None and st.session_state.combined_suggestions:  # Check if combined_suggestions is not None and not empty
+                st.session_state.result_df = None
+                with st.spinner('Fetching Business Information...'):
+                    postcodes_to_query = {st.session_state.postcode_input}
+                    st.session_state.result_df = query_postcodes(postcodes_to_query, st.session_state.combined_suggestions)
+                st.session_state.explore_businesses = True
+            else:
+                st.warning("Please generate and refine suggestions first before exploring businesses.")
         else:
-            display_df = st.session_state.result_df
+            st.warning("Please enter a postcode before exploring businesses.")
 
-        # Display the (filtered) DataFrame
-        st.write('Result DataFrame:', display_df)
+    display_df = None  # Set default value of display_df to None
 
-        # Buttons to download DataFrame as CSV or Excel
+    if st.session_state.explore_businesses and st.session_state.postcode_input:
+        if st.session_state.result_df is not None and not st.session_state.result_df.empty:
+            st.subheader(f"Businesses in {st.session_state.postcode_input} related to {st.session_state.industry_input}:")
+
+            # Search bar for ABN or Business Name
+            search_term = st.text_input("Search ABN or Business Name:")
+            display_df = st.session_state.result_df  # Initialize display_df with result_df
+            
+            if search_term:
+                # Filter the DataFrame based on the search term
+                mask = (st.session_state.result_df['ABN'].astype(str).str.contains(search_term)) | \
+                    (st.session_state.result_df['Organisation Name'].str.contains(search_term, case=False))
+                display_df = st.session_state.result_df[mask]
+                
+                if display_df.empty:  # check if the filtered DataFrame is empty
+                    st.warning("No result to display for the search term. Showing all results instead.")
+                    display_df = st.session_state.result_df  # revert to showing all results if the filtered result is empty
+            else:
+                st.warning("Showing all results. Please enter a search term for specific results.")
+            
+            # Reset the index of display_df
+            display_df = display_df.reset_index(drop=True)
+
+            # Display the (filtered) DataFrame
+            st.write('Result DataFrame:', display_df)
+        else:
+            st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
+    else:
+        st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
+
+    # Before proceeding with CSV and Excel exporting, check if display_df is not None and not empty
+    if display_df is not None and not display_df.empty:
+        # Now you can safely proceed with your CSV and Excel exporting code
+
+        # CSV exporting code
         csv = display_df.to_csv(index=False)
-        # Convert the CSV string to bytes
         csv_bytes = csv.encode('utf-8')
-        # Create a bytes buffer
         csv_buffer = io.BytesIO(csv_bytes)
 
         if 'csv_download_clicked' not in st.session_state:
@@ -153,7 +214,7 @@ if page == "Home":
             st.success('CSV Download started!')
             st.session_state.csv_download_clicked = False  # Reset the state after showing the message
 
-        # Convert the DataFrame to Excel and get the Excel file's bytes
+        # Excel exporting code
         excel_bytes = io.BytesIO()
         with pd.ExcelWriter(excel_bytes, engine='xlsxwriter') as writer:
             display_df.to_excel(writer, sheet_name='Sheet1', index=False)
@@ -168,6 +229,8 @@ if page == "Home":
         if st.session_state.xlsx_download_clicked:
             st.success('Excel Download started!')
             st.session_state.xlsx_download_clicked = False  # Reset the state after showing the message
+    else:
+        st.warning("There is no data to export. Please ensure data is loaded and displayed before attempting to export.")
 
 elif page == "Contact Us":
     st.write(
