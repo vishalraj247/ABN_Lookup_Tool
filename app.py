@@ -50,7 +50,14 @@ if 'explore_businesses' not in st.session_state:
     st.session_state.explore_businesses = False
 
 st.set_page_config(page_title="ABN Lookup Tool", page_icon="🔍", layout='wide', initial_sidebar_state="expanded")
-st.title("ABN Lookup Tool")
+# Using containers for better layout
+header_container = st.container()
+content_container = st.container()
+
+# Adding content to containers
+with header_container:
+    st.title("ABN Lookup Tool")
+    #st.image("your_logo.png", width=100)  # Add your logo if available
 
 sidebar = st.sidebar
 sidebar.title("Navigation")
@@ -58,22 +65,27 @@ page = sidebar.radio("Select a Page", ["Home", "Contact Us", "Feedback"])
 
 if page == "Home":
 
-    st.write(
+    with content_container:
+        st.subheader("Welcome to the ABN Lookup Tool!")
+        # Adding an image or icon can make it visually appealing
+        #st.image("welcome_image.png", width=300)  # Replace with an actual path to an image
+        st.write("Follow these steps to get started:")
+        st.markdown("""
+        1. **Enter Industry**: Specify the industry you are interested in.
+        2. **Enter Postcode**: Provide the postcode for the location you want to target.
+        3. **Set Page Limit**: Decide the number of pages you want to scrape for business names.
+        """)
+
+    st.markdown(
     """
-    Welcome to the ABN Lookup Tool! Follow these steps to get started:
+    ***After filling in these details:***
     
-    1. **Enter Industry**: Specify the industry you are interested in.
-    2. **Enter Postcode**: Provide the postcode for the location you want to target.
-    3. **Set Page Limit**: Decide the number of pages you want to scrape for business names.
+    - Click on **'Generate Suggestions'** to get initial business name suggestions related to the entered industry.
+    - Proceed with **'Web Scrape and Refine'** to refine the business names after scraping additional data.
     
-    After filling in these details:
+    ***You can also edit the generated and refined suggestions. Once you are satisfied with the suggestions:***
     
-    - Click on **Generate Suggestions** to get initial business name suggestions related to the entered industry.
-    - Proceed with **Web Scrape and Refine** to refine the business names after scraping additional data.
-    
-    You can also edit the generated and refined suggestions. Once you are satisfied with the suggestions:
-    
-    - Click **Explore Businesses Now** to retrieve and display information about businesses related to the selected industry and postcode.
+    - Click **'Explore Businesses Now'** to retrieve and display information about businesses related to the selected industry and postcode.
     
     Feel free to navigate through the tool and explore the various features available!
     """
