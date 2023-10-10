@@ -52,7 +52,13 @@ if 'explore_businesses' not in st.session_state:
 st.set_page_config(page_title="ABN Lookup Tool", page_icon="🔍", layout='wide', initial_sidebar_state="expanded")
 st.title("ABN Lookup Tool")
 
-st.write(
+sidebar = st.sidebar
+sidebar.title("Navigation")
+page = sidebar.radio("Select a Page", ["Home", "Contact Us", "Feedback"])
+
+if page == "Home":
+
+    st.write(
     """
     Welcome to the ABN Lookup Tool! Follow these steps to get started:
     
@@ -71,13 +77,8 @@ st.write(
     
     Feel free to navigate through the tool and explore the various features available!
     """
-)
+    )
 
-sidebar = st.sidebar
-sidebar.title("Navigation")
-page = sidebar.radio("Select a Page", ["Home", "Contact Us", "Feedback"])
-
-if page == "Home":
     sidebar.header("User Input Features")
     st.session_state.industry_input = sidebar.text_input("Enter Industry:", value=st.session_state.industry_input)
     st.session_state.postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
@@ -149,7 +150,27 @@ if page == "Home":
         )
         if st.session_state.allow_edit_combined == 'Yes':
             edited_combined_suggestions = st.text_area("Edit Combined Suggestions:", ', '.join(st.session_state.combined_suggestions))
-            st.session_state.combined_suggestions = edited_combined_suggestions.split(', ')
+            new_combined_suggestions = edited_combined_suggestions.split(', ')
+
+            # Initialize new lists for initial and refined suggestions
+            new_initial_suggestions = []
+            new_refined_names = []
+            
+            # Iterate through the new_combined_suggestions and update initial_suggestions and refined_names accordingly
+            for suggestion in new_combined_suggestions:
+                if suggestion in st.session_state.initial_suggestions:
+                    new_initial_suggestions.append(suggestion)
+                elif suggestion in st.session_state.refined_names:
+                    new_refined_names.append(suggestion)
+                else:
+                    # Handling the case where the edited suggestion wasn't in either initial or refined names
+                    # We are adding the new suggestions to initial suggestions
+                    new_initial_suggestions.append(suggestion)
+
+            # Update the state variables
+            st.session_state.combined_suggestions = new_combined_suggestions
+            st.session_state.initial_suggestions = new_initial_suggestions
+            st.session_state.refined_names = new_refined_names
         else:
             st.write(f"Combined Suggestions: {', '.join(st.session_state.combined_suggestions)}")
 

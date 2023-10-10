@@ -36,4 +36,8 @@ def refine_business_names(industry, additional_names):
 
 def combine_and_deduplicate(initial, refined):
     """Combine and deduplicate suggestions."""
+    if initial is None:
+        initial = []
+    if refined is None:
+        refined = []
     return list(set(initial + refined))
