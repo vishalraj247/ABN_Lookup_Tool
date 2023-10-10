@@ -113,7 +113,6 @@ if page == "Home":
         if st.session_state.industry_input:
             with st.spinner('Scraping and Refining Business Names...'):
                 scraped_names = get_all_business_names(st.session_state.industry_input, st.session_state.page_number)
-                st.write(scraped_names)
                 st.session_state.scraped_names = scraped_names
                 st.success(f"Scraped {len(scraped_names)} business names for {st.session_state.industry_input}")
                 refined_names = refine_business_names(st.session_state.industry_input, scraped_names)
