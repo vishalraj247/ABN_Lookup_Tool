@@ -25,6 +25,9 @@ if 'combined_suggestions' not in st.session_state:
 if 'result_df' not in st.session_state:
     st.session_state.result_df = None
 
+if 'scraped_names' not in st.session_state:
+    st.session_state.scraped_names = None
+
 if 'industry_input' not in st.session_state:
     st.session_state.industry_input = ""
 
@@ -191,9 +194,11 @@ if page == "Home":
             # Display the (filtered) DataFrame
             st.write('Result DataFrame:', display_df)
         else:
-            st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
+            if not st.session_state.initial_suggestions or not st.session_state.scraped_names or not st.session_state.refined_names or not st.session_state.postcode_input:
+                st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
     else:
-        st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
+        if not st.session_state.initial_suggestions or not st.session_state.scraped_names or not st.session_state.refined_names or not st.session_state.postcode_input:
+            st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
 
     # Before proceeding with CSV and Excel exporting, check if display_df is not None and not empty
     if display_df is not None and not display_df.empty:

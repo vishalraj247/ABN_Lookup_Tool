@@ -8,7 +8,7 @@ def generate_business_name_suggestions(industry):
     initial_prompt = f"Please generate a list of unique, one-word keywords that are strictly and directly related to the {industry} industry. These keywords should be commonly associated with businesses in the {industry} sector and should not include generic words or phrases."
 
     initial_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-3.5-turbo-0613",
         messages=[{"role": "user", "content": initial_prompt}],
         max_tokens=100,
         temperature=0.7
@@ -23,7 +23,7 @@ def refine_business_names(industry, additional_names):
     refine_prompt = f"The following is a list of business names related to the {industry} industry: {', '.join(additional_names)}. Please carefully review the list. For each word, if it isn't a word strictly related to the {industry} industry, kindly remove it, even if it forms a part of a business name. Leave behind a list of words that are uniquely and very strictly related to the {industry} industry."
 
     refine_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-3.5-turbo-0613",
         messages=[{"role": "user", "content": refine_prompt}],
         max_tokens=500,
         temperature=0.7
