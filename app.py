@@ -193,14 +193,18 @@ if page == "Home":
 
     if st.button("Explore Businesses Now"):
         if st.session_state.postcode_input:  # Check if a postcode is entered
-            if st.session_state.combined_suggestions is not None and st.session_state.combined_suggestions:  # Check if combined_suggestions is not None and not empty
+            suggestions_to_use = st.session_state.combined_suggestions
+            # Fallback to initial suggestions if no combined suggestions are available
+            if not suggestions_to_use:
+                suggestions_to_use = st.session_state.initial_suggestions
+            if suggestions_to_use:  # Check if there are suggestions to use (initial or combined)
                 st.session_state.result_df = None
                 with st.spinner('Fetching Business Information...'):
                     postcodes_to_query = {st.session_state.postcode_input}
-                    st.session_state.result_df = query_postcodes(postcodes_to_query, st.session_state.combined_suggestions)
+                    st.session_state.result_df = query_postcodes(postcodes_to_query, suggestions_to_use)
                 st.session_state.explore_businesses = True
             else:
-                st.warning("Please generate and refine suggestions first before exploring businesses.")
+                st.warning("Please generate suggestions first before exploring businesses.")
         else:
             st.warning("Please enter a postcode before exploring businesses.")
 
