@@ -88,8 +88,6 @@ if page == "Home":
     - Click **'Explore Businesses Now'** to retrieve and display information about businesses related to the selected industry and postcode.
     
     Feel free to navigate through the tool and explore the various features available!
-
-    Current running Status:
     """
     )
 
@@ -99,6 +97,8 @@ if page == "Home":
     st.session_state.page_number = sidebar.number_input("Enter Page Limit to Scrape:", value=st.session_state.page_number, min_value=1, max_value=25, step=1)
 
     if sidebar.button("Generate Suggestions"):
+        status_placeholder = st.empty()
+        status_placeholder.info("Current running Status:")
         with st.spinner('Generating Initial Business Name Suggestions...'):
             initial_suggestions = generate_business_name_suggestions(st.session_state.industry_input)
             while not initial_suggestions:
@@ -106,11 +106,14 @@ if page == "Home":
                 initial_suggestions = generate_business_name_suggestions(st.session_state.industry_input)
             st.session_state.initial_suggestions = initial_suggestions
             st.success(f"Generated initial suggestions for {st.session_state.industry_input}")
+            status_placeholder.empty()
 
     # Button to Perform Web Scraping and Refine Suggestions
     if sidebar.button("Web Scrape and Refine"):
         st.session_state.explore_businesses = False
         if st.session_state.industry_input:
+            status_placeholder = st.empty()
+            status_placeholder.info("Current running Status:")
             with st.spinner('Scraping and Refining Business Names...'):
                 scraped_names = get_all_business_names(st.session_state.industry_input, st.session_state.page_number)
                 st.session_state.scraped_names = scraped_names
@@ -122,6 +125,7 @@ if page == "Home":
                     st.session_state.initial_suggestions = []  # Initialize it as an empty list if it's None
                 st.session_state.combined_suggestions = list(set(st.session_state.initial_suggestions + refined_names))
                 st.success(f"Refined and combined suggestions for {st.session_state.industry_input}")
+                status_placeholder.empty()
         else:
             st.warning("Please provide the industry before scraping and refining")
 
@@ -199,10 +203,13 @@ if page == "Home":
                 suggestions_to_use = st.session_state.initial_suggestions
             if suggestions_to_use:  # Check if there are suggestions to use (initial or combined)
                 st.session_state.result_df = None
+                status_placeholder = st.empty()
+                status_placeholder.info("Current running Status:")
                 with st.spinner('Fetching Business Information...'):
                     postcodes_to_query = {st.session_state.postcode_input}
                     st.session_state.result_df = query_postcodes(postcodes_to_query, suggestions_to_use)
                 st.session_state.explore_businesses = True
+                status_placeholder.empty()
             else:
                 st.warning("Please generate suggestions first before exploring businesses.")
         else:
