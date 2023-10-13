@@ -305,7 +305,6 @@ elif page == "Contact Us":
 
 elif page == "Feedback":
     st.write("## Feedback Form")
-    st.markdown("Please provide your feedback below:")
     st.write("We value your feedback! Please provide it by clicking [here](https://forms.gle/wuZkSzQ4NK2Pm6pB8).")
 
 elif page == "Documentation":
