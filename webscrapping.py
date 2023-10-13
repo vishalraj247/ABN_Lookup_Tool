@@ -48,6 +48,6 @@ def get_all_business_names(industry, page_limit):
             all_names.extend(names)
             page_number += 1
             sleep_time = random.uniform(3, 6)
-            time.sleep(sleep_time)
+            time.sleep(sleep_time) # Adhere to a respectful rate limiting
         all_names = list(set(all_names))
     return all_names

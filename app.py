@@ -61,7 +61,7 @@ with header_container:
 
 sidebar = st.sidebar
 sidebar.title("Navigation")
-page = sidebar.radio("Select a Page", ["Home", "Contact Us", "Feedback"])
+page = sidebar.radio("Select a Page", ["Home", "Contact Us", "Feedback", "Documentation"])
 
 if page == "Home":
 
@@ -76,24 +76,26 @@ if page == "Home":
         3. **Set Page Limit**: Decide the number of pages you want to scrape for business names.
         """)
 
-    st.markdown(
-    """
-    ***After filling in these details:***
-    
-    - Click on **'Generate Suggestions'** to get initial business name suggestions related to the entered industry.
-    - Proceed with **'Web Scrape and Refine'** to refine the business names after scraping additional data.
-    
-    ***You can also edit the generated and refined suggestions. Once you are satisfied with the suggestions:***
-    
-    - Click **'Explore Businesses Now'** to retrieve and display information about businesses related to the selected industry and postcode.
-    
-    Feel free to navigate through the tool and explore the various features available!
-    """
-    )
-
     sidebar.header("User Input Features")
     st.session_state.industry_input = sidebar.text_input("Enter Industry:", value=st.session_state.industry_input)
-    st.session_state.postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
+    # Define the valid postcode ranges
+    valid_postcode_ranges = [(2000, 2599), (2619, 2899), (2921, 2999)]
+    postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
+    # Check if input is digit and in the valid range
+    if postcode_input.isdigit():
+        postcode = int(postcode_input)
+        is_valid_postcode = any(start <= postcode <= end for start, end in valid_postcode_ranges)
+        
+        if is_valid_postcode:
+            sidebar.success("Valid postcode.")
+            st.session_state.postcode_input = postcode_input
+        else:
+            sidebar.warning("Invalid postcode. Please enter a postcode within NSW as of the following ranges: "
+                    "2000–2599, 2619–2899, 2921–2999.")
+    else:
+        if st.session_state.postcode_input:
+            sidebar.warning("Please enter a numerical value for the postcode.")
+            
     st.session_state.page_number = sidebar.number_input("Enter Page Limit to Scrape:", value=st.session_state.page_number, min_value=1, max_value=25, step=1)
 
     if sidebar.button("Generate Suggestions"):
@@ -239,15 +241,15 @@ if page == "Home":
             
             # Reset the index of display_df
             display_df = display_df.reset_index(drop=True)
-
+            st.session_state['display_df'] = display_df
             # Display the (filtered) DataFrame
             st.write('Result DataFrame:', display_df)
         else:
             if not st.session_state.initial_suggestions or not st.session_state.scraped_names or not st.session_state.refined_names or not st.session_state.postcode_input:
-                st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
+                st.warning("Please atleast generate keywords, or web scrape & refine, and enter a postcode before exploring businesses.")
     else:
         if not st.session_state.initial_suggestions or not st.session_state.scraped_names or not st.session_state.refined_names or not st.session_state.postcode_input:
-            st.warning("Please generate keywords, web scrape, refine, and enter a postcode before exploring businesses.")
+            st.warning("Please atleast generate keywords, or web scrape & refine, and enter a postcode before exploring businesses.")
 
     # Before proceeding with CSV and Excel exporting, check if display_df is not None and not empty
     if display_df is not None and not display_df.empty:
@@ -303,20 +305,96 @@ elif page == "Contact Us":
 
 elif page == "Feedback":
     st.write("## Feedback Form")
-    name = st.text_input("Your Name")
-    feedback = st.text_area("Please provide your feedback:")
-    if st.button("Submit Feedback"):
-        feedback_data = {'Name': [name], 'Feedback': [feedback]}
-        feedback_df = pd.DataFrame(feedback_data)
+    st.markdown("Please provide your feedback below:")
+    st.write("We value your feedback! Please provide it by clicking [here](https://forms.gle/wuZkSzQ4NK2Pm6pB8).")
+
+elif page == "Documentation":
+    st.markdown(
+        """
+        ## Documentation
+
+        ### Overview
+        ABN Lookup Tool is an interactive web application designed to facilitate a seamless search, retrieval, and management of businesses details.
+
+        ### Features
+        - **Search and Explore Businesses**: Users can search businesses using either the ABN or Organisation Name. The resulting dataframe (`display_df`) displays the following columns: ABN, Identifier Status, Organisation Name, Score, Is Current Indicator, State Code, and Postcode.
         
-        if os.path.isfile('feedback.csv'):
-            existing_feedback_df = pd.read_csv('feedback.csv', index_col=0)
-            updated_feedback_df = pd.concat([existing_feedback_df, feedback_df], ignore_index=True)
-        else:
-            updated_feedback_df = feedback_df
+        Example data:
+        ```
+        | ABN         | Identifier Status | Organisation Name      | Score | Is Current Indicator | State Code | Postcode |
+        |-------------|-------------------|------------------------|-------|----------------------|------------|----------|
+        | 46103449985 | Active            | PERMANENT PEST CONTROL | 94    | Y                    | NSW        | 2000     |
+        | 25618786968 | Active            | Proven Pest Control    | 94    | Y                    | NSW        | 2000     |
+        [... More Rows ...]
+        ```
+        - **CSV & Excel Download**: Users can download the search results in CSV or Excel format for future reference.
         
-        updated_feedback_df.to_csv('feedback.csv')
-        st.success(f"Thank you for your feedback, {name}!")
+        - **Postcode Specification**: Refine your search by specifying a postcode (NSW Only) to narrow down the results to a particular location.
+
+        - **Session State Management**: The app preserves the state of the home page even when navigating to other pages, ensuring a consistent user experience.
+
+        - **Contact Us**: Users are provided with a direct line of communication (Name, Email, Address) for any inquiries, suggestions, or further communications.
+
+        - **Feedback**: Users can share their thoughts and feedback via our integrated Google Forms, ensuring a straightforward and efficient submission process while keeping all responses systematically organised.
+
+        - **Editing & Updating**: List updates or edits (out of all three) are automatically and dynamically reflected in other relevant lists through a feedback system.
+
+        ### Navigations & Pages
+        1. **Home**: Perform search operations, explore and download the resulting businesses data.
+        2. **Contact Us**: Get in touch with the team behind WorkSafe Wizards.
+        3. **Feedback**: Provide valuable feedback to help us enhance the app.
+        4. **Documentation**: Learn more about the app, its features, and how to use it.
+
+        ### How to Use
+
+        - **Follow these steps to get started:**
+
+          1. **Enter Industry**: Specify the industry you are interested in.
+          2. **Enter Postcode**: Provide the postcode for the location you want to target.
+          3. **Set Page Limit**: Decide the number of pages you want to scrape (YellowPages) for business names.
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        - **After filling in these details:**
+        
+          4. Click on '**Generate Suggestions**' to get initial business name suggestions related to the entered industry (Using GPT-3.5 API).
+          5. Proceed with '**Web Scrape and Refine**' to refine the business names after scraping additional data (Using GPT-4 API).
+
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        """
+        - You can also edit the generated and refined suggestions. Once you are satisfied with the suggestions:
+        
+          6. Click '**Explore Businesses Now**' to retrieve and display information about businesses related to the selected industry and postcode.
+        """,
+    )
+          
+    st.markdown(
+        """
+        - **Providing Feedback**: 
+            1. Navigate to the 'Feedback' page.
+            2. Click on the embedded link to open a feedback form.
+            3. Navigate and fill through the feedback form on Google Forms.
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    st.write(
+        """
+        - **Getting in Touch**:
+            1. Visit 'Contact Us' page for all the communication-related information.
+
+        We hope this documentation provides clear insights into the functioning and usage of the ABN Lookup Tool app. For any further queries, please do not hesitate to contact us.
+
+        Feel free to navigate through the tool and explore the various features available. Happy exploring!
+        """,
+    )
 
 # Styling
 st.markdown(
