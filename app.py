@@ -253,7 +253,7 @@ if page == "Home":
 
     # Before proceeding with CSV and Excel exporting, check if display_df is not None and not empty
     if display_df is not None and not display_df.empty:
-        # Now you can safely proceed with your CSV and Excel exporting code
+        # Now we can safely proceed with our CSV and Excel exporting code
 
         # CSV exporting code
         csv = display_df.to_csv(index=False)
