@@ -326,6 +326,8 @@ elif page == "Documentation":
         | 25618786968 | Active            | Proven Pest Control    | 94    | Y                    | NSW        | 2000     |
         [... More Rows ...]
         ```
+        Additionally, users can sort the table by clicking on a column name and view the table in fullscreen for detailed exploration.
+        
         - **CSV & Excel Download**: Users can download the search results in CSV or Excel format for future reference.
         
         - **Postcode Specification**: Refine your search by specifying a postcode (NSW Only) to narrow down the results to a particular location.
