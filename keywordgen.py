@@ -7,12 +7,12 @@ if openai.api_key is None:
     raise ValueError("OPENAI_API_KEY environment variable not set")
 
 def generate_business_name_suggestions(industry):
-    initial_prompt = f"Please generate a list of unique, one-word keywords that are strictly and directly related to the {industry} industry. These keywords should be commonly associated with businesses in the {industry} sector and should not include generic words or phrases."
+    initial_prompt = f"Please generate a diverse and specific list of unique, single-word keywords that are strictly and directly related to the {industry} industry, ensuring no repetition of words. The keywords should be widely recognized and associated with businesses in the {industry} sector, excluding any generic or broadly applicable words or phrases. Emphasize words that have a clear and unique association with the {industry} industry."
 
     initial_response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-0613",
         messages=[{"role": "user", "content": initial_prompt}],
-        max_tokens=100,
+        max_tokens=500,
         temperature=0.7
     )
 
@@ -22,7 +22,7 @@ def generate_business_name_suggestions(industry):
     return initial_suggestions
 
 def refine_business_names(industry, additional_names):
-    refine_prompt = f"The following is a list of business names related to the {industry} industry: {', '.join(additional_names)}. Please carefully review the list. For each word, if it isn't a word very strictly related to the {industry} industry, kindly remove it, even if it forms a part of a business name. Leave behind a list of words that are uniquely and very strictly related to the {industry} industry. Also, remove all the function words like, all, the, mr, dr, pty, ltd etc."
+    refine_prompt = f"Carefully examine the following list of words and phrases related to the {industry} industry: {', '.join(additional_names)}. Your task is to rigorously filter the list, ensuring that only words or phrases with a direct, exclusive, and unambiguous connection to the {industry} industry are retained. Exclude words or phrases that, while they may appear in business names within the industry, do not have a clear and unique association with the industry itself. For example, general terms like 'Solutions', 'Services', or geographical names should be removed. Compile a new list that includes only words or phrases with a clear, unique, and strict relevance to the {industry} industry, and ensure to omit all function words like 'all', 'the', 'mr', 'dr', 'pty', 'ltd', etc."
 
     refine_response = openai.ChatCompletion.create(
         model="gpt-4-0314",
