@@ -368,6 +368,22 @@ elif page == "Documentation":
             | 25618786968 | Active            | Proven Pest Control    | 94    | Y                    | NSW        | 2000     |
             [... More Rows ...]
             ```
+            More about the columns:
+
+            - **ABN (Australian Business Number)**: The ABN is a unique 11-digit identifier issued by the Australian government to identify businesses operating in Australia. This column contains the ABNs of various entities, such as businesses and organisations.
+
+            - **Identifier Status**: This column indicates the status of the ABN, which can be "Active" or "Cancelled." An "Active" status means that the business or organisation is currently operating and registered, while a "Cancelled" status suggests that the registration may have been terminated.
+
+            - **Organisation Name**: The organisation name is represented as the legal name or trading name of the entity associated with the ABN. This column contains the full name of the organisation or individual related to the ABN.
+
+            - **Score**: The score here represents a measure of relevance or accuracy of the search results. A higher score indicates a closer match to the search query or keywords. It helps assess the quality of the search results, with higher scores generally being more relevant.
+
+            - **Is Current Indicator**: This column contains a binary indicator ("Y" or "N") that signifies whether the entity's information is current or not. If it's marked as "Y," it means that the data is up-to-date and applicable, while "N" suggests that the information may be outdated or no longer valid.
+
+            - **State Code**: The state code represents the Australian state or territory associated with the entity's physical address. This column provides information about the state or territory in which the entity is located, such as New South Wales (NSW).
+
+            - **Postcode**: The postcode column contains the postal code or ZIP code related to the entity's physical address. It specifies the area or region where the entity is situated, helping to pinpoint its location within a state or territory.
+
             Additionally, users can sort the table by clicking on a column name and view the table in fullscreen for detailed exploration.
             
             - **CSV & Excel Download**: Users can download the search results in CSV or Excel format for future reference.
