@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import io
+from PIL import Image, ImageDraw
 
 from keywordgen import generate_business_name_suggestions, refine_business_names, combine_and_deduplicate
 from abnlookup import query_postcodes
@@ -54,10 +55,33 @@ st.set_page_config(page_title="ABN Lookup Tool", page_icon="🔍", layout='wide'
 header_container = st.container()
 content_container = st.container()
 
-# Adding content to containers
+def circular_crop(image_path, output_size):
+    with Image.open(image_path) as im:
+        # Create a mask of the same size as the image, filled with 0 (black)
+        mask = Image.new("L", im.size, 0)
+        
+        # Draw a white circle on the mask
+        draw = ImageDraw.Draw(mask)
+        width, height = im.size
+        draw.ellipse((0, 0, width, height), fill=255)
+        
+        # Apply the mask to the image
+        circular_cropped = Image.composite(im, Image.new("RGBA", im.size, (0, 0, 0, 0)), mask)
+        
+        # Resize the image to the desired size
+        circular_cropped = circular_cropped.resize((output_size, output_size))
+        
+        return circular_cropped
+
 with header_container:
-    st.title("ABN Lookup Tool")
-    #st.image("your_logo.png", width=100)  # Add your logo if available
+    col1, col2 = st.columns([1, 15])
+    
+    with col1:
+        cropped_image = circular_crop("App icon.png", 50)  # Adjust the size as needed
+        st.image(cropped_image, width=50)  # Adjust the width as needed
+    
+    with col2:
+        st.title("ABN Lookup Tool")
 
 sidebar = st.sidebar
 sidebar.title("Navigation")
@@ -67,8 +91,7 @@ if page == "Home":
 
     with content_container:
         st.subheader("Welcome to the ABN Lookup Tool!")
-        # Adding an image or icon can make it visually appealing
-        #st.image("welcome_image.png", width=300)  # Replace with an actual path to an image
+        st.image("Cover image.png", width=575)
         st.write("Follow these steps to get started:")
         st.markdown("""
         1. **Enter Industry**: Specify the industry you are interested in.
@@ -78,6 +101,9 @@ if page == "Home":
 
     sidebar.header("User Input Features")
     st.session_state.industry_input = sidebar.text_input("Enter Industry:", value=st.session_state.industry_input)
+    # Check if industry_input is empty
+    if not st.session_state.industry_input.strip():
+        sidebar.warning("Industry input cannot be left empty.")
     # Define the valid postcode ranges
     valid_postcode_ranges = [(2000, 2599), (2619, 2899), (2921, 2999)]
     postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
@@ -99,21 +125,24 @@ if page == "Home":
     st.session_state.page_number = sidebar.number_input("Enter Page Limit to Scrape:", value=st.session_state.page_number, min_value=1, max_value=25, step=1)
 
     if sidebar.button("Generate Suggestions"):
-        status_placeholder = st.empty()
-        status_placeholder.info("Current running Status:")
-        with st.spinner('Generating Initial Business Name Suggestions...'):
-            initial_suggestions = generate_business_name_suggestions(st.session_state.industry_input)
-            while not initial_suggestions:
-                st.warning("No initial suggestions generated. Regenerating...")
+        if st.session_state.industry_input.strip():
+            status_placeholder = st.empty()
+            status_placeholder.info("Current running Status:")
+            with st.spinner('Generating Initial Business Name Suggestions...'):
                 initial_suggestions = generate_business_name_suggestions(st.session_state.industry_input)
-            st.session_state.initial_suggestions = initial_suggestions
-            st.success(f"Generated initial suggestions for {st.session_state.industry_input}")
-            status_placeholder.empty()
+                while not initial_suggestions:
+                    st.warning("No initial suggestions generated. Regenerating...")
+                    initial_suggestions = generate_business_name_suggestions(st.session_state.industry_input)
+                st.session_state.initial_suggestions = initial_suggestions
+                st.success(f"Generated initial suggestions for {st.session_state.industry_input}")
+                status_placeholder.empty()
+        else:
+            st.warning("Please provide the industry before generating suggestions.")
 
     # Button to Perform Web Scraping and Refine Suggestions
     if sidebar.button("Web Scrape and Refine"):
-        st.session_state.explore_businesses = False
-        if st.session_state.industry_input:
+        if st.session_state.industry_input and st.session_state.industry_input.strip():
+            st.session_state.explore_businesses = False
             status_placeholder = st.empty()
             status_placeholder.info("Current running Status:")
             with st.spinner('Scraping and Refining Business Names...'):
@@ -308,95 +337,118 @@ elif page == "Feedback":
     st.write("We value your feedback! Please provide it by clicking [here](https://forms.gle/wuZkSzQ4NK2Pm6pB8).")
 
 elif page == "Documentation":
-    st.markdown(
-        """
-        ## Documentation
-
-        ### Overview
-        ABN Lookup Tool is an interactive web application designed to facilitate a seamless search, retrieval, and management of businesses details.
-
-        ### Features
-        - **Search and Explore Businesses**: Users can search businesses using either the ABN or Organisation Name. The resulting dataframe (`display_df`) displays the following columns: ABN, Identifier Status, Organisation Name, Score, Is Current Indicator, State Code, and Postcode.
-        
-        Example data:
-        ```
-        | ABN         | Identifier Status | Organisation Name      | Score | Is Current Indicator | State Code | Postcode |
-        |-------------|-------------------|------------------------|-------|----------------------|------------|----------|
-        | 46103449985 | Active            | PERMANENT PEST CONTROL | 94    | Y                    | NSW        | 2000     |
-        | 25618786968 | Active            | Proven Pest Control    | 94    | Y                    | NSW        | 2000     |
-        [... More Rows ...]
-        ```
-        Additionally, users can sort the table by clicking on a column name and view the table in fullscreen for detailed exploration.
-        
-        - **CSV & Excel Download**: Users can download the search results in CSV or Excel format for future reference.
-        
-        - **Postcode Specification**: Refine your search by specifying a postcode (NSW Only) to narrow down the results to a particular location.
-
-        - **Session State Management**: The app preserves the state of the home page even when navigating to other pages, ensuring a consistent user experience.
-
-        - **Contact Us**: Users are provided with a direct line of communication (Name, Email, Address) for any inquiries, suggestions, or further communications.
-
-        - **Feedback**: Users can share their thoughts and feedback via our integrated Google Forms, ensuring a straightforward and efficient submission process while keeping all responses systematically organised.
-
-        - **Editing & Updating**: List updates or edits (out of all three) are automatically and dynamically reflected in other relevant lists through a feedback system.
-
-        ### Navigations & Pages
-        1. **Home**: Perform search operations, explore and download the resulting businesses data.
-        2. **Contact Us**: Get in touch with the team behind WorkSafe Wizards.
-        3. **Feedback**: Provide valuable feedback to help us enhance the app.
-        4. **Documentation**: Learn more about the app, its features, and how to use it.
-
-        ### How to Use
-
-        - **Follow these steps to get started:**
-
-          1. **Enter Industry**: Specify the industry you are interested in.
-          2. **Enter Postcode**: Provide the postcode for the location you want to target.
-          3. **Set Page Limit**: Decide the number of pages you want to scrape (YellowPages) for business names.
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        - **After filling in these details:**
-        
-          4. Click on '**Generate Suggestions**' to get initial business name suggestions related to the entered industry (Using GPT-3.5 API).
-          5. Proceed with '**Web Scrape and Refine**' to refine the business names after scraping additional data (Using GPT-4 API).
-
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.write(
-        """
-        - You can also edit the generated and refined suggestions. Once you are satisfied with the suggestions:
-        
-          6. Click '**Explore Businesses Now**' to retrieve and display information about businesses related to the selected industry and postcode.
-        """,
-    )
-          
-    st.markdown(
-        """
-        - **Providing Feedback**: 
-            1. Navigate to the 'Feedback' page.
-            2. Click on the embedded link to open a feedback form.
-            3. Navigate and fill through the feedback form on Google Forms.
-        """,
-        unsafe_allow_html=True,
-    )
+    # Create Tabs
+    chapter1, chapter2, chapter3 = st.tabs(["Chapter 1: Introduction", "Chapter 2: Interface Guide", "Chapter 3: Future & Limitations"])
     
-    st.write(
-        """
-        - **Getting in Touch**:
-            1. Visit 'Contact Us' page for all the communication-related information.
+    # Chapter 1 Content
+    with chapter1:
+        st.markdown(
+            """
+            ## Introduction
+            
+            ### Purpose
+            The ABN Lookup Tool has been developed with the primary objective of simplifying the process of searching, retrieving, and managing business details. It offers a user-friendly interface coupled with robust features to assist users in gathering comprehensive business-related information.
+            
+            ### Framework Architecture
+            The architecture of the ABN Lookup Tool is modular and designed to provide efficient data retrieval and user interactivity.
+            """,
+            unsafe_allow_html=True,
+        )
+        st.image("ABN Lookup Tool Architecture.png", caption="Framework Architecture")
+        st.markdown(
+            """
+            ### Features
+            - **Search and Explore Businesses**: Users can search businesses using either the ABN or Organisation Name. The resulting dataframe (`display_df`) displays the following columns: ABN, Identifier Status, Organisation Name, Score, Is Current Indicator, State Code, and Postcode.
+            
+            Example data:
+            ```
+            | ABN         | Identifier Status | Organisation Name      | Score | Is Current Indicator | State Code | Postcode |
+            |-------------|-------------------|------------------------|-------|----------------------|------------|----------|
+            | 46103449985 | Active            | PERMANENT PEST CONTROL | 94    | Y                    | NSW        | 2000     |
+            | 25618786968 | Active            | Proven Pest Control    | 94    | Y                    | NSW        | 2000     |
+            [... More Rows ...]
+            ```
+            Additionally, users can sort the table by clicking on a column name and view the table in fullscreen for detailed exploration.
+            
+            - **CSV & Excel Download**: Users can download the search results in CSV or Excel format for future reference.
+            
+            - **Postcode Specification**: Refine your search by specifying a postcode (NSW Only) to narrow down the results to a particular location.
 
-        We hope this documentation provides clear insights into the functioning and usage of the ABN Lookup Tool app. For any further queries, please do not hesitate to contact us.
+            - **Session State Management**: The app preserves the state of the home page even when navigating to other pages, ensuring a consistent user experience.
 
-        Feel free to navigate through the tool and explore the various features available. Happy exploring!
-        """,
-    )
+            - **Contact Us**: Users are provided with a direct line of communication (Name, Email, Address) for any inquiries, suggestions, or further communications.
 
+            - **Feedback**: Users can share their thoughts and feedback via our integrated Google Forms, ensuring a straightforward and efficient submission process while keeping all responses systematically organised.
+
+            - **Editing & Updating**: List updates or edits (out of all three) are automatically and dynamically reflected in other relevant lists through a feedback system.
+            
+            """,
+            unsafe_allow_html=True,
+        )
+    
+    # Chapter 2 Content
+    with chapter2:
+        st.markdown(
+            """
+            ## Interface Guide
+            
+            To make the most out of the ABN Lookup Tool, here's a step-by-step guide to navigate through its features, complemented with interface screenshots for clarity.
+            
+            1. **Startup & Main Page**: Upon launching the tool, you're greeted with the main interface.
+            """,
+            unsafe_allow_html=True,
+        )
+        st.image("screenshot_startup.png", caption="Main Page Interface")
+        st.markdown(
+            """
+            2. **Entering Industry Details**: Start by specifying your industry of interest, desired postcode, and setting the page limit.
+            """,
+            unsafe_allow_html=True,
+        )
+        st.image("screenshot_industry.png", caption="Industry Input Section", width=300)
+        st.markdown(
+            """
+            3. **Generating Suggestions & Web Scraping**: After filling the initial details, generate business name suggestions and further refine them through web scraping.
+            """,
+            unsafe_allow_html=True,
+        )
+        st.image("screenshot_suggestions.png", caption="Generate and Refine Suggestions")
+        st.markdown(
+            """
+            4. **Exploring Businesses**: Post-refinement, explore the businesses based on the refined suggestions and download the data.
+            """,
+            unsafe_allow_html=True,
+        )
+        st.image("screenshot_explore.png", caption="Exploring Businesses")
+        st.markdown(
+            """            
+            5. **Feedback & Contact Us Pages**: Navigate to these sections to provide feedback or get in touch with the team.
+            """,
+            unsafe_allow_html=True,
+        )
+        st.image("screenshot_contact_feedback.png", caption="Feedback & Contact Sections")
+        
+    # Chapter 3 Content
+    with chapter3:
+        st.markdown(
+            """
+            ## Limitations & Potential Future Improvements
+            
+            ### Current Limitations:
+            - **Geographical Restriction**: The postcode specification currently supports only NSW. Expansion to other regions can make the tool more versatile.
+            - **Data Source Dependency**: The data is sourced mainly from YellowPages and ABN Lookup website, which might not cover all available businesses.
+            - **Data Accuracy**: As with all web scraping methods, there's always a small chance of discrepancies in the data retrieved.
+            - **Keyword Refinement**: Although, final suggestions can be edited, keywords refinement solely depends on GPT-4 API.
+            
+            ### Future Improvements:
+            - **Expanding Geographical Coverage**: Integration of more regions beyond NSW.
+            - **Incorporating More Data Sources**: Including more sources can improve the diversity and accuracy of business data.
+            - **Improve Refinement Process**: Improve the refinement process of keywords related to the business names of the industry defined.
+            - **User Profile Management**: Allow users to create profiles, save searches, and manage their lookup histories.
+            - **Feedback Analytics**: Implement an analytics system to derive insights from user feedback and drive future improvements.
+            """,
+            unsafe_allow_html=True,
+        )
 # Styling
 st.markdown(
     """

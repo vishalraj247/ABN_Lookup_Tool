@@ -110,7 +110,7 @@ def query_postcodes(postcodes, names):
     df = pd.DataFrame(data)
 
     # Filter the DataFrame for accurate results
-    filtered_df = df[(df['Score'] > 80) & (df['Identifier Status'] == 'Active')]
+    filtered_df = df[(df['Score'] > 90) & (df['Identifier Status'] == 'Active')]
 
     # Remove duplicates based on 'Organisation Name'
     filtered_df = filtered_df.drop_duplicates(subset=['Organisation Name'], keep='first')
