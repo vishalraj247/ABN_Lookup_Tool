@@ -357,10 +357,7 @@ elif page == "Documentation":
         st.image("ABN Lookup Tool Architecture.png", caption="Framework Architecture")
         st.markdown(
             """
-            ### Features
-            - **Search and Explore Businesses**: Users can search businesses using either the ABN or Organisation Name. The resulting dataframe (`display_df`) displays the following columns: ABN, Identifier Status, Organisation Name, Score, Is Current Indicator, State Code, and Postcode.
-            
-            Example data:
+            ### Example data
             ```
             | ABN         | Identifier Status | Organisation Name      | Score | Is Current Indicator | State Code | Postcode |
             |-------------|-------------------|------------------------|-------|----------------------|------------|----------|
@@ -384,7 +381,11 @@ elif page == "Documentation":
 
             - **Postcode**: The postcode column contains the postal code or ZIP code related to the entity's physical address. It specifies the area or region where the entity is situated, helping to pinpoint its location within a state or territory.
 
-            Additionally, users can sort the table by clicking on a column name and view the table in fullscreen for detailed exploration.
+            ### Additional Features
+            
+            - **Search and Explore Businesses**: Users can search businesses using either the ABN or Organisation Name. The resulting dataframe (`display_df`) displays the following columns: ABN, Identifier Status, Organisation Name, Score, Is Current Indicator, State Code, and Postcode.
+
+            - **Sort and Fullscreen View**: Users can sort the table by clicking on a column name and view the table in fullscreen for detailed exploration.
             
             - **CSV & Excel Download**: Users can download the search results in CSV or Excel format for future reference.
             
