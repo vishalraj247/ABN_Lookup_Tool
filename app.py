@@ -35,6 +35,9 @@ if 'industry_input' not in st.session_state:
 if 'postcode_input' not in st.session_state:
     st.session_state.postcode_input = ""
 
+if 'previous_industry_input' not in st.session_state:
+    st.session_state.previous_industry_input = ""
+
 if 'page_number' not in st.session_state:
     st.session_state.page_number = 1
 
@@ -100,32 +103,50 @@ if page == "Home":
         """)
 
     sidebar.header("User Input Features")
-    st.session_state.industry_input = sidebar.text_input("Enter Industry:", value=st.session_state.industry_input)
-    # Check if industry_input is empty
-    if not st.session_state.industry_input.strip():
-        sidebar.warning("Industry input cannot be left empty.")
-    # Define the valid postcode ranges
+
+    # Industry Input
+    industry_input = sidebar.text_input("Enter Industry:", value=st.session_state.get('industry_input', ''))
+    industry_warning_placeholder = sidebar.empty()
+
+    # If there's a valid industry input, display a success message.
+    if st.session_state.industry_input.strip():
+        industry_warning_placeholder.success("Industry input provided.")
+    else:
+        industry_warning_placeholder.empty()  # Clear the placeholder if it's empty
+
+    # Check if industry input has changed
+    if st.session_state.previous_industry_input != industry_input:
+        reset_session_state()  # Reset the session state
+        st.session_state.previous_industry_input = industry_input  # Update the previous industry input
+
+    # Postcode Input
     valid_postcode_ranges = [(2000, 2599), (2619, 2899), (2921, 2999)]
-    postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.postcode_input, max_chars=4)
+    postcode_input = sidebar.text_input("Enter Postcode:", value=st.session_state.get('postcode_input', ''), max_chars=4)
+    postcode_placeholder = sidebar.empty()  # Placeholder for success/warning messages for postcode
+
     # Check if input is digit and in the valid range
     if postcode_input.isdigit():
         postcode = int(postcode_input)
         is_valid_postcode = any(start <= postcode <= end for start, end in valid_postcode_ranges)
         
         if is_valid_postcode:
-            sidebar.success("Valid postcode.")
+            postcode_placeholder.success("Valid postcode.")
             st.session_state.postcode_input = postcode_input
         else:
-            sidebar.warning("Invalid postcode. Please enter a postcode within NSW as of the following ranges: "
+            postcode_placeholder.warning("Invalid postcode. Please enter a postcode within NSW as of the following ranges: "
                     "2000–2599, 2619–2899, 2921–2999.")
-    else:
-        if st.session_state.postcode_input:
-            sidebar.warning("Please enter a numerical value for the postcode.")
+    elif postcode_input:  # Only show the warning if there's an input that's not numeric
+        postcode_placeholder.warning("Please enter a numerical value for the postcode.")
             
     st.session_state.page_number = sidebar.number_input("Enter Page Limit to Scrape:", value=st.session_state.page_number, min_value=1, max_value=25, step=1)
+    # Update industry input in the session state
+    st.session_state.industry_input = industry_input
 
     if sidebar.button("Generate Suggestions"):
-        if st.session_state.industry_input.strip():
+        if not industry_input.strip():
+            industry_warning_placeholder.warning("Industry input cannot be left empty.")
+        else:
+            industry_warning_placeholder.success("Industry input provided.")
             status_placeholder = st.empty()
             status_placeholder.info("Current running Status:")
             with st.spinner('Generating Initial Business Name Suggestions...'):
@@ -136,12 +157,13 @@ if page == "Home":
                 st.session_state.initial_suggestions = initial_suggestions
                 st.success(f"Generated initial suggestions for {st.session_state.industry_input}")
                 status_placeholder.empty()
-        else:
-            st.warning("Please provide the industry before generating suggestions.")
 
     # Button to Perform Web Scraping and Refine Suggestions
     if sidebar.button("Web Scrape and Refine"):
-        if st.session_state.industry_input and st.session_state.industry_input.strip():
+        if not industry_input.strip():
+            industry_warning_placeholder.warning("Industry input cannot be left empty.")
+        else:
+            industry_warning_placeholder.success("Industry input provided.")
             st.session_state.explore_businesses = False
             status_placeholder = st.empty()
             status_placeholder.info("Current running Status:")
@@ -157,8 +179,6 @@ if page == "Home":
                 st.session_state.combined_suggestions = list(set(st.session_state.initial_suggestions + refined_names))
                 st.success(f"Refined and combined suggestions for {st.session_state.industry_input}")
                 status_placeholder.empty()
-        else:
-            st.warning("Please provide the industry before scraping and refining")
 
     if st.session_state.initial_suggestions:
         st.subheader(f"Initial suggested Names for {st.session_state.industry_input} Industry:")
@@ -382,7 +402,6 @@ elif page == "Documentation":
             - **Postcode**: The postcode column contains the postal code or ZIP code related to the entity's physical address. It specifies the area or region where the entity is situated, helping to pinpoint its location within a state or territory.
 
             ### Additional Features
-            
             - **Search and Explore Businesses**: Users can search businesses using either the ABN or Organisation Name. The resulting dataframe (`display_df`) displays the following columns: ABN, Identifier Status, Organisation Name, Score, Is Current Indicator, State Code, and Postcode.
 
             - **Sort and Fullscreen View**: Users can sort the table by clicking on a column name and view the table in fullscreen for detailed exploration.
